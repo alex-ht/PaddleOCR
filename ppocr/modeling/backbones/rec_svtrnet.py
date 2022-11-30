@@ -526,14 +526,14 @@ class SVTRNet(nn.Layer):
                 stride=1,
                 padding=0,
                 bias_attr=False)
-            self.hardswish = nn.Hardswish()
+            self.swish = nn.Swish()
             self.dropout = nn.Dropout(p=last_drop, mode="downscale_in_infer")
         if not prenorm:
             self.norm = eval(norm_layer)(embed_dim[-1], epsilon=epsilon)
         self.use_lenhead = use_lenhead
         if use_lenhead:
             self.len_conv = nn.Linear(embed_dim[2], self.out_channels)
-            self.hardswish_len = nn.Hardswish()
+            self.swish_len = nn.Swish()
             self.dropout_len = nn.Dropout(
                 p=last_drop, mode="downscale_in_infer")
 
@@ -575,7 +575,7 @@ class SVTRNet(nn.Layer):
         x = self.forward_features(x)
         if self.use_lenhead:
             len_x = self.len_conv(x.mean(1))
-            len_x = self.dropout_len(self.hardswish_len(len_x))
+            len_x = self.dropout_len(self.swish_len(len_x))
         if self.last_stage:
             if self.patch_merging is not None:
                 h = self.HW[0] // 4
@@ -585,7 +585,7 @@ class SVTRNet(nn.Layer):
                 x.transpose([0, 2, 1]).reshape(
                     [0, self.embed_dim[2], h, self.HW[1]]))
             x = self.last_conv(x)
-            x = self.hardswish(x)
+            x = self.swish(x)
             x = self.dropout(x)
         if self.use_lenhead:
             return x, len_x
